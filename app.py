@@ -6,37 +6,35 @@ from nltk.sentiment.vader import SentimentIntensityAnalyzer
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
-import os
+import requests
+from io import BytesIO
 
-# --- Cek dan Download Data dari Google Drive (hanya jika belum ada) ---
-DATA_FILE = 'dataset social media.xlsx'
-FILE_ID = '1E4W1RvNGgyawc6I4TxQk76n289FX9kCK'
-URL = f'https://drive.google.com/uc?id={FILE_ID}'
-
-def download_data_if_needed():
-    if not os.path.exists(DATA_FILE):
-        import gdown
-        st.warning("Mendownload dataset dari Google Drive. Tunggu beberapa detik...")
-        gdown.download(URL, DATA_FILE, quiet=False)
-
-download_data_if_needed()
+# --- URL ke Google Drive CSV ---
+FILE_ID = '1OyjeFy--yuz36Jstfkhu-9uSunoHXhmK'
+CSV_URL = f'https://drive.google.com/uc?export=download&id={FILE_ID}'
+DATASET_NAME = 'social_media_engagement_data'
 
 # --- Load Data ---
 @st.cache_data
 def load_data():
-    if not os.path.exists(DATA_FILE):
-        st.error(f"Dataset `{DATA_FILE}` tidak ditemukan.")
+    try:
+        response = requests.get(CSV_URL)
+        response.raise_for_status()
+        df = pd.read_csv(BytesIO(response.content))
+        return df
+    except Exception as e:
+        st.error(f"Gagal memuat dataset `{DATASET_NAME}`: {e}")
         return pd.DataFrame()
-    df = pd.read_excel(DATA_FILE, sheet_name='Working File', engine='openpyxl')
-    # Lanjutkan proses preprocessing seperti sebelumnya...
-    # [....]
-    return df
 
+# --- Mulai App ---
 df = load_data()
 if df.empty:
     st.stop()
 
-# Lanjutkan kode aslimu seperti biasa...
+st.title("📊 Analisis Social Media Engagement")
+st.success(f"Dataset `{DATASET_NAME}` berhasil dimuat.")
+st.dataframe(df.head())
+
 
 
 # ===============================
